@@ -1,31 +1,46 @@
 const _ = require("lodash");
 const Excel = require("exceljs");
+const StationUtility = require("../Modules/StationUtility").default;
 
-class ExcelJsSecond {
+class ExcelReader {
     #RackCells = 20;
     #shelvesInRack = 4;
     #RackAddrRow = 49;
     #stations = [];
     #cardRows = [37, 29, 21, 13];
-    #fileName = "Kerman_Rack_Layout.xlsx";
+    #file = {};
     #sheetName = "Sheet1";
     #wb = new Excel.Workbook();
     #ws = {};
+    cardStorage = [];
+    stationUtil = new StationUtility([]);
 
-    constructor() {
+
+    constructor(file) {
+        this.#file = file;
         return (async () => {
-            await this.prepareExcel(this.#fileName, this.#sheetName);
+            await this.prepareExcel(file, this.#sheetName);
             this.prepareStations();
             return this;
         })();
+    }
+
+    convToBuff(file) {
+        return new Promise((resolve, reject) => {
+            const fileReader = new FileReader();
+            fileReader.readAsArrayBuffer(file);
+            fileReader.onload = (ev) => resolve(ev.target.result);
+            fileReader.onerror = (err) => reject(err);
+        })
     }
 
     getCell(row, col) {
         return this.#ws.getCell(row, col);
     }
 
-    async prepareExcel(fileName, sheetName) {
-        await this.#wb.xlsx.readFile(fileName);
+    async prepareExcel(file, sheetName) {
+        const fileBuff = await this.convToBuff(file);
+        await this.#wb.xlsx.load(fileBuff);
         this.#ws = this.#wb.getWorksheet(sheetName);
     }
 
@@ -44,11 +59,24 @@ class ExcelJsSecond {
 
         const shelf = {id: shelfId, cards: []};
         for (let cardIter = startColRack + 16; cardIter > startColRack + 2; cardIter--) {
+            let size = 1;
+            if(this.getCell(portRow + 1, cardIter).master !== this.getCell(portRow + 4, cardIter).master){
+                size = 1/2;
+            } else {
+                size = cardIter - this.getCell(portRow + 1, cardIter).master.col + 1;
+            }
+
+            let color = "00" + this.stationUtil.getCard(this.getCell(portRow + 1, cardIter).value||"").bgColor.split("#")[1];
             shelf.cards.push({
                 id: this.getCell(portRow, cardIter).value,
-                name: this.getCell(portRow + 1, cardIter).value,
+                name: this.getCell(portRow + 1, cardIter).value||"",
+                size: size,
+                fill:{type: "pattern", pattern: "solid", fgColor:{argb: color}},
                 addr: {row: portRow + 1, col: cardIter}
             });
+            if(typeof this.cardStorage.find(value => value === (this.getCell(portRow + 1, cardIter).value||"")) === "undefined") {
+                this.cardStorage.push(this.getCell(portRow + 1, cardIter).value || "");
+            }
             //Do not read the next col if the size of the current card is greater than 1
             if (this.getCell(portRow + 1, cardIter).master.address !== this.getCell(portRow + 1, cardIter).address) cardIter--;
         }
@@ -58,7 +86,7 @@ class ExcelJsSecond {
     readRack(startCol, RackId){
         const Rack = {
             id: RackId,
-            shelves:[],
+            shelves: [],
             address: this.getCell(this.#RackAddrRow, startCol + 3).value.split(': ')[1]
         };
         _.range(0, this.#shelvesInRack).forEach(shelf => {
@@ -69,7 +97,8 @@ class ExcelJsSecond {
     }
 
     readStation(stationItem, stationId) {
-        const station = {id: stationId, Racks: []};
+        const name = typeof(stationItem.name) === "string" ? stationItem.name : stationItem.name.richText[0].text + stationItem.name.richText[1].text;
+        const station = {id: stationId, name: name, Racks: []};
         const index = this.#stations.indexOf(stationItem);
         const endCol = index + 1 === this.#stations.length ?
             this.#ws.columns.length + 1 : this.#stations[index + 1].col;
@@ -88,11 +117,46 @@ class ExcelJsSecond {
             this.readStation(station, this.#stations.indexOf(station) + 1)
         ).concat();
     }
+
+    readConnectionWS(connectionAddr) {
+        const connectionWS = this.#wb.getWorksheet(connectionAddr);
+        return {name: connectionAddr, data: this.readRows(connectionWS)};
+    }
+
+    readRows(ws) {
+        const connection = [];
+        ws.getRows(3, ws.rowCount).forEach(data => {
+            let fromCell = data.getCell(1).value;
+            if(fromCell !== null) {
+                fromCell = this.convRichText2Text(fromCell);
+                const toCell = this.convRichText2Text(data.getCell(2).value);
+                const descrCell = this.convRichText2Text(data.getCell(3).value);
+                connection.push(
+                    {
+                        description: {from: descrCell.split(/ to | TO /)[0], to: descrCell.split(/ to | TO /)[1]},
+                        connection: {from: fromCell, to: toCell}
+                    }
+                );
+            }
+        });
+        return connection;
+    }
+    convRichText2Text(text) {
+        let buff = "";
+        if(typeof text.richText !== "undefined"){
+            text.richText.forEach(item => buff += item.text);
+        } else {
+            buff = text;
+        }
+        return buff
+    }
 }
 
-const mainClass = async function () {
-    const c = await new ExcelJsSecond();
-    console.log(c.readCity());
-}
+export default ExcelReader;
 
-mainClass().then();
+// const mainClass = async function () {
+//     const c = await new ExcelReader();
+//     console.log(c.readCity());
+// }
+//
+// mainClass().then();
