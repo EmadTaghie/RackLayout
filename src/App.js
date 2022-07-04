@@ -831,7 +831,7 @@ class App extends Component{
                             className="btn btn-sm btn-primary height-25 labeled-button"
                             buttonText={{sign: "Connection Details"}}
                             title="Connection Details"
-                            hidden={true}
+                            hidden={false}
                             disabled={selectedCard.address[3] === 0}
                         >
                             <div className="row">
