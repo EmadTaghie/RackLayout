@@ -826,12 +826,12 @@ class App extends Component{
                         cardEnums={this.stationUtility.getEnums()}
                         onCardPortClick={this.onCardPortClick}
                     />
-                    <div className="col m-0 p-0" style={{width: "30px"}}>
+                    <div className="col p-0" style={{width: "30px", margin: "0 0 0 -80px", transform: 'translate(79px, 0)'}}>
                         <FormDialog
                             className="btn btn-sm btn-primary height-25 labeled-button"
                             buttonText={{sign: "Connection Details"}}
                             title="Connection Details"
-                            hidden={false}
+                            hidden={true}
                             disabled={selectedCard.address[3] === 0}
                         >
                             <div className="row">
