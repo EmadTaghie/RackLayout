@@ -1,13 +1,19 @@
+//This class reads connections of BPM Excel file.
+//This class automatically extracts connections and returns them as an output.
+//for an instance of usage, please refer to line 59 of App.js JS file.
+
 const Excel = require("exceljs");
 
 class ReadConnection {
     wb = new Excel.Workbook();
     ws = {};
 
+    //Returns connections as an output
     constructor(file) {
         return this.readConnectionWS(file);
     }
 
+    //Gets and Excel file as an input and returns connections as an output.
     async readConnectionWS(file) {
         const fileBuffer = await this.convToBuff(file)
         await this.wb.xlsx.load(fileBuffer);

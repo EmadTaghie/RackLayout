@@ -57,7 +57,7 @@ class App extends Component{
 
     readExcel = (ev) => {
         new ReadConnection(ev.target.files[0]).then(RC => {
-            console.log("connections = ", RC)
+            console.log("Read connections = ", RC)
             const addr = RC.map(connections => {
                 return {
                     id: connections.id,
@@ -68,7 +68,7 @@ class App extends Component{
 
 
             this.setState({city: this.createStation(addr), selectedStation: 0, selectedRack: 0, selectedShelf: 0, connections: addr}, () => {
-                console.log("city = ", this.state.city)
+                // console.log("city = ", this.state.city)
             });
         });
     }

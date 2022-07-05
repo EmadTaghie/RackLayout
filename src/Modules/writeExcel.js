@@ -1,3 +1,8 @@
+//This class manages producing Excel files of Rack Layout.
+//You just need to use two functions in this class.
+//First one is createCity() to make a Work Book containing a city containing connections.
+//And the second one is write() to get an Excel file as output.
+//for an instance of usage, please refer to line 120 of App.js JS file.
 import StationUtility from "./StationUtility";
 
 const _ = require("lodash");
@@ -43,7 +48,10 @@ class writeExcel {
         PowerWS: this.wb.addWorksheet("Power Consumption", {properties: {defaultRowHeight: 21, defaultColWidth: 3.1}})
     };
 
+    //Gets a city as input and gives a Work Book as its output.
+    //to see the shape of the input please run consol.log() function.
     creatCity(city) {
+        console.log("Write City: ", city);
         this.stationUtil = new StationUtility(city);
         city.forEach(station => {
             this.creatStation(station);
@@ -51,7 +59,7 @@ class writeExcel {
     }
 
     creatStation(data) {
-        console.log("station data = ", data)
+        // console.log("station data = ", data)
         for (const [__, WS] of Object.entries(this.ws)) {
             const starterCell = WS.getRow(1).cellCount + 1;
             WS.mergeCells(1, starterCell, 2, starterCell + this.constants.RackCells * Math.max(1, data.Racks.length) - 1);
@@ -114,7 +122,7 @@ class writeExcel {
                     this.constants.startRowShelf - (shelfId - 1)*this.constants.shelfHeight, startColl + this.constants.RackMargin + this.constants.shelfWidth - 1);
             }
             else if (WS.name === "Rack Layout") {
-                console.log("rackData = ", data)
+                // console.log("rackData = ", data)
                 this.creatShelfLayout(shelf, startColl);
             } else if (WS.name === "Power Consumption") {
                 this.creatPowerLayout(shelf, startColl);
@@ -149,7 +157,7 @@ class writeExcel {
     }
 
     creatShelfLayout(data, startCol) {
-        console.log("data = ", data)
+        // console.log("data = ", data)
         const firstPortAddr = {
             row: this.constants.startRowShelf - this.constants.shelfHeight * data.id + 1,
             col: startCol + this.constants.RackMargin + this.constants.shelfWidth - 1
@@ -195,6 +203,7 @@ class writeExcel {
         cell.font = {name: this.constants.calibri, size: fontSize, bold: bold};
     };
 
+    //Gives an Excel file containing the result Rack Layout.
     write() {
         return this.wb.xlsx.writeBuffer();
     }

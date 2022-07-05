@@ -1,3 +1,8 @@
+//This class manages producing Excel files of BPM.
+//You just need to use two functions in this class.
+//First one is createConncetion() to make a Work Book containing connections
+//And the second one is write() to get an Excel file as output.
+//for an instance of usage, please refer to line 126 of App.js JS file.
 const Excel = require("exceljs");
 
 const constants = {
@@ -24,7 +29,10 @@ const constants = {
 class WriteConnection {
     wb = new Excel.Workbook();
 
+    //Gets a connection list as input and gives a Work Book as its output.
+    //to see the shape of the input please run consol.log() function.
     createConnection(connections) {
+        console.log("Writeconnections: ", connections);
         // try {
             connections.forEach(connection => {
                 const ws = this.wb.addWorksheet(connection.name);
@@ -110,6 +118,7 @@ class WriteConnection {
              "," + direction.port;
     }
 
+    //Gives an Excel file containing the result connections.
     write = () => {
         return this.wb.xlsx.writeBuffer();
     }
